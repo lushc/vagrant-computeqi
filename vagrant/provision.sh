@@ -4,7 +4,9 @@
 sudo apt-get -y install     \
   imagemagick               \
   libmagickwand-dev         \
-  mongodb
+  mongodb					\
+  netcdf-bin				\
+  libnetcdf-dev
 
 # edit mongodb config to allow remote connection from host
 ex /etc/mongodb.conf <<EOEX
