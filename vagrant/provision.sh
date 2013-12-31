@@ -4,8 +4,8 @@
 sudo apt-get -y install     \
   imagemagick               \
   libmagickwand-dev         \
-  mongodb					\
-  netcdf-bin				\
+  mongodb                   \
+  netcdf-bin                \
   libnetcdf-dev
 
 # edit mongodb config to allow remote connection from host
@@ -18,7 +18,7 @@ EOEX
 service mongodb restart
 
 # change to web directory
-cd /home/vagrant/src/emulatorization-web
+cd /home/vagrant/src/computeqi-web
 
 # install gems
 bundle install
