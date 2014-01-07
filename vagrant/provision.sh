@@ -17,6 +17,13 @@ EOEX
 # restart mongodb
 service mongodb restart
 
+# get RVM for deployment
+RVM_DIR=/home/vagrant/rvm
+if [ ! -d "$RVM_DIR" ]; then
+  git clone git://github.com/wayneeseguin/rvm.git "$RVM_DIR"
+  echo "export rvm_path=$RVM_DIR" >> /home/vagrant/.bash_profile
+fi
+
 # change to web directory
 cd /home/vagrant/src/computeqi-web
 
