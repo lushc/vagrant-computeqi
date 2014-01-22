@@ -40,6 +40,7 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   config.vm.synced_folder "../src", "/home/vagrant/src", :nfs => !IS_WINDOWS
   config.vm.synced_folder "../src/webapps", "/var/lib/tomcat6/webapps", :nfs => !IS_WINDOWS
+  config.vm.synced_folder "data_bags", "/var/chef/data_bags", :nfs => !IS_WINDOWS
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -74,6 +75,7 @@ Vagrant.configure("2") do |config|
     chef.add_recipe "java"
     chef.add_recipe "openssl"
     chef.add_recipe "tomcat"
+    chef.add_recipe "tomcat::users"
     chef.add_recipe "vim"
   
     # You may also specify custom JSON attributes:
