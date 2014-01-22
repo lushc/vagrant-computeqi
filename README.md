@@ -1,60 +1,109 @@
-# Vagrant Rails App Starter
+# Quality Emitter VM
 
-A Ruby on Rails project starter, utilizing a Vagrant VM (default: Ubuntu 12.04 Precise Pangolin 32-bit) provisioned with Chef Solo.
+A Vagrant-provisioned virtual machine to create a suitable development environment for the [Quality Emitter](http://quality-emitter.geoviqua.org) that was developed as part of the [GeoViQua](http://geoviqua.org) project. This enables you to run a local copy of the Ruby on Rails front-end application ([computeqi-web](https://github.com/GeoViQua/computeqi-web)) as well as locally deploy the back-end API ([emulatorization-api](https://github.com/GeoViQua/emulatorization-api)) for further testing/development.
 
-Cookbooks included:
+This environment is **not** suitable for production.
 
-* [apt](https://github.com/opscode-cookbooks/apt)
-* [build-essential](https://github.com/opscode-cookbooks/build-essential)
-* [nodejs](https://github.com/mdxp/nodejs-cookbook)
-* [rbenv](https://github.com/fnichol/chef-rbenv)
-* [ruby_build](https://github.com/fnichol/chef-ruby_build)
-* [vim](https://github.com/opscode-cookbooks/vim)
+## Prerequisites
 
-## Dependencies
+* You have installed [VirtualBox](https://www.virtualbox.org/) (followed by the Extension Pack) and [Vagrant](http://vagrantup.com/)
+* You have your own fork of [computeqi-web](https://github.com/GeoViQua/computeqi-web)
+* (Optional) you have your own fork of [emulatorization-api](https://github.com/GeoViQua/emulatorization-api)
 
-* [VirtualBox](https://www.virtualbox.org/)
-* [Ruby](http://www.ruby-lang.org/en/)
-* [Vagrant](http://vagrantup.com/)
-* [Vagrant Librarian-Chef](https://github.com/jimmycuadra/vagrant-librarian-chef)
+## Getting Started
+
+First, clone this repository and change directory:
+
+```bash
+$ git clone https://github.com/lushc/vagrant-computeqi
+$ cd vagrant-computeqi
+```
+
+You'll need to clone your fork of computeqi-web into the `src` directory. If you'll be building and testing modifications to emulatorization-api then clone it into the src directory also:
+
+```bash
+$ git clone https://github.com/<username>/computeqi-web src/computeqi-web
+$ git clone https://github.com/<username>/emulatorization-api src/emulatorization-api
+```
+
+Rename the example computeqi-web configuration files by removing the `.example` extension:
+
+```bash
+$ cd src/computeqi-web/config
+$ mv api.yml.example api.yml
+$ mv mongoid.yml.example mongoid.yml
+```
+
+Everything can be left as default unless you're **not** going to deploy a local copy of emulatorization-api, in which case you need to edit `api.yml` to point to an external instance of emulatorization-api.
+
+Next, go back up to the `vagrant` directory, install the Librarian-Chef plugin and boot up the VM:
+
+```bash
+$ cd ../../../vagrant
+$ vagrant plugin install vagrant-librarian-chef
+$ vagrant up
+```
+
+Vagrant will then begin the process of booting & provisioning the VM. Once finished you can SSH in and control the VM directly:
+
+```bash
+$ vagrant ssh
+```
 
 ## Usage
 
-Clone it into your project folder.
+### Accessing Applications
 
-```bash
-$ git clone https://github.com/devert/vagrant-rails-app-starter [project-name]
-$ rm -rf .git
+Vagrant will have forwarded the following ports to allow access to the application from the host machine (i.e. outside of the VM):
+
+* [http://localhost:3000](http://localhost:3000) - The Rails server that's hosting the computeqi-web application.
+* [http://localhost:8080](http://localhost:8080) - Tomcat. The manager and host-manager webapps can be accessed with the username `vagrant` and password `vagrant`
+* [http://localhost:27017](http://localhost:27017) - MongoDB. Use something like [Robomongo](http://robomongo.org/) if you want to inspect the computeqi-web database using a GUI.
+
+NB. If a forwarded port doesn't work then it's likely that port was already in use on your host machine and was auto-corrected. The correct port will appear in the console output, e.g.
+
+```
+[default] Fixed port collision for 8080 => 8080. Now on port 2203.
 ```
 
-Open the vagrant/Vagrantfile and modify *proj-name* instances to the name of your project. Modify the Node.js and Ruby versions you would like installed in the *chef.json* attributes. Additionally, list any additional gems you would like installed in the *gems* array. See [chef-rbenv](https://github.com/fnichol/chef-rbenv) documentation for more details on rbenv configuration.
+If you've since fixed the conflict and want to use the intended port, or missed what it was corrected to, reload the configuration with `vagrant reload`
 
-```bash
-$ vagrant plugin install vagrant-librarian-chef
-$ cd vagrant
-$ vagrant up
-$ vagrant ssh
-$ cd proj-name
-$ sudo rails new .
-Overwrite /home/vagrant/proj-name/.gitignore? (enter "h" for help) [Ynaqdh] y
-$ rails server
+### Deploying emulatorization-api
+
+Simply build the project using your favourite IDE that supports Maven and copy the resulting WAR file (`emulatorization-api.war`) from `src/emulatorization-api/target` to `src/webapps` - Tomcat will automatically hot deploy it. Alternatively you could upload the WAR through the manager webapp (see above).
+
+If it doesn't work, you may be missing a configuration file found under `src/emulatorization-api/src/main/resources` called `et.production.yml` - an example configuration would be:
+
+```yaml
+# A server that runs an instance of matlab-connector on the specified port
+# https://github.com/itszootime/matlab-connector
+matlab:
+  host: example.com
+  port: 12345
+  gpml_path: /path/to/gpmlab-2.0
+# A server that runs Rserve on the specified port
+rserve:
+  host: example.com
+  port: 12346
+# Base URL, should be left as default
+webapp:
+  url: http://localhost:8080/emulatorization-api
 ```
 
-If the above fails when running the `sudo rails new .` command, try running `sudo bundle install` and then run `rails new .` again.
+If you do deploy an instance of emulatorization-api this way, don't forget to edit `src/computeqi-web/config/api.yml` so that the development/test environments use localhost.
 
-After running the above commands you should be able to browse to http://locahost:3000/ and see the rails "Welcome aboard" page. Changes to files via the host machine will immediately be updated on the guest VM as well. 
+### Administration Tips
 
-Now get in there and build something awesometronic with Ruby on Rails!
+* The VM is Ubuntu 12.04 (Precise Pangolin) 32-bit, user is `vagrant` and `sudo` is passwordless
+* Everything in the `src` folder can be accessed from within the VM under the directory `/home/vagrant/src`
+* The Rails server starts detached so if you need to restart it you'll first need to change directory to `/home/vagrant/src/computeqi-web`, kill the process with `kill $(cat tmp/pids/server.pid)` and then start the server again with `rails s -d`
+* If you make any changes to models that are Remotable or find that your jobs are stuck in a queue and are not being processed, you may have to restart the delayed_job worker with `sudo RAILS_ENV=development /home/vagrant/src/computeqi-web/script/delayed_job restart`
 
-## Optional (But Pretty Great)
+### Vagrant Tips
 
-#### Vagrant
-* Keep Vagrant VM's VirtualBox Guest Additions up to date with [vagrant-vbguest](https://github.com/dotless-de/vagrant-vbguest) plugin. Install this on the host machine.
+* Made a change to the Vagrantfile? Use `vagrant reload`
+* Added a cookbook or changed `vagrant/provision.sh`? Use `vagrant provision`
+* Want to safely close the VM but save its state? Use `vagrant suspend` (to resume it again, use `vagrant up`)
+* Want to destroy the VM entirely? Use `vagrant destroy`
 
-    ```bash
-    $ vagrant gem install vagrant-vbguest
-    ```
-
-
-
-
+If you get the error "A Vagrant environment is required" make sure you're in the `vagrant` directory.
