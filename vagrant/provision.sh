@@ -33,8 +33,8 @@ bundle install
 # load the schema & run seeds.db
 rake db:setup
 
-# start a delayed_job daemon
-RAILS_ENV=development script/delayed_job start
-
 # start the rails server in detached mode
 rails server -d
+
+# start a delayed_job daemon
+RAILS_ENV=development script/delayed_job start
